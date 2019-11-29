@@ -8,3 +8,26 @@
  * Custom here your css module
  *
  */
+
+.MMM-OpenMensa .category {
+    text-align: center;
+    color: white;
+    font-size: medium;
+    font-weight: bold;
+    width: 250px;
+}
+
+.MMM-OpenMensa .name {
+    text-align: center;
+    color: white;
+    font-size: medium;
+    font-weight: normal;
+    width: 250px;
+}
+
+.MMM-OpenMensa .price {
+    text-align: center;
+    font-size: small;
+    font-weight: lighter;
+    width: 250px;
+}
