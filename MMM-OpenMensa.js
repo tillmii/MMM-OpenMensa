@@ -9,40 +9,40 @@
 
 Module.register("MMM-OpenMensa", {
 	defaults: {
-		updateInterval: 60000,
-		retryDelay: 5000
+		canteen: 79,
+		hideCategories: ["Pasta", "Terrine", "Tagessuppe"],
+		updateInterval: 5000,
+		fadeDuration: 1500
 	},
 
 	requiresVersion: "2.1.0", // Required version of MagicMirror
 
 	start: function() {
-		var self = this;
-		var dataRequest = null;
-		var dataNotification = null;
+		let self = this;
+
+		this.canteenName = null;
+		this.canteenData = null;
+		//Fetch new data on a new day
+		this.today = moment().date();
+		//Meal which is currently displayed
+		this.shownMeal = 0;
 
 		//Flag for check if module is loaded
 		this.loaded = false;
 
-		// Schedule update timer.
+		// Schedule update timer
 		this.getData();
 		setInterval(function() {
-			self.updateDom();
+			self.updateDom(self.defaults.fadeDuration);
 		}, this.config.updateInterval);
 	},
 
-	/*
-	 * getData
-	 * function example return data and show it in the module wrapper
-	 * get a URL request
-	 *
-	 */
 	getData: function() {
-		var self = this;
+		let self = this;
 
-		var urlApi = "https://jsonplaceholder.typicode.com/posts/1";
-		var retry = true;
+		let urlApi = "https://openmensa.org/api/v2/canteens/" + self.config.canteen + "/days/" + moment().format("YYYY-MM-DD") + "/meals";
 
-		var dataRequest = new XMLHttpRequest();
+		let dataRequest = new XMLHttpRequest();
 		dataRequest.open("GET", urlApi, true);
 		dataRequest.onreadystatechange = function() {
 			console.log(this.readyState);
@@ -53,67 +53,76 @@ Module.register("MMM-OpenMensa", {
 				} else if (this.status === 401) {
 					self.updateDom(self.config.animationSpeed);
 					Log.error(self.name, this.status);
-					retry = false;
 				} else {
 					Log.error(self.name, "Could not load data.");
-				}
-				if (retry) {
-					self.scheduleUpdate((self.loaded) ? -1 : self.config.retryDelay);
 				}
 			}
 		};
 		dataRequest.send();
 	},
 
+	getDom: function() {
+		let self = this;
 
-	/* scheduleUpdate()
-	 * Schedule next update.
-	 *
-	 * argument delay number - Milliseconds before next update.
-	 *  If empty, this.config.updateInterval is used.
-	 */
-	scheduleUpdate: function(delay) {
-		var nextLoad = this.config.updateInterval;
-		if (typeof delay !== "undefined" && delay >= 0) {
-			nextLoad = delay;
-		}
-		nextLoad = nextLoad ;
-		var self = this;
-		setTimeout(function() {
+		if (self.today !== moment().date()) {
 			self.getData();
-		}, nextLoad);
+			self.today = moment().date();
+		}
+
+		let wrapper = document.createElement("div");
+		wrapper.appendChild(self.header());
+
+		if (self.canteenData) {
+			let data = document.createElement("div");
+
+			let category = document.createElement("div");
+			category.className = "category";
+			category.innerHTML = self.canteenData[self.shownMeal]["category"];
+			data.appendChild(category);
+
+			let name = document.createElement("div");
+			name.className = "name";
+			name.innerHTML = self.canteenData[self.shownMeal]["name"];
+			data.appendChild(name);
+
+			let price = document.createElement("div");
+			price.className = "price";
+			price.innerHTML = self.canteenData[self.shownMeal]["prices"]["students"].toFixed(2).toString().replace(".", ",") + " €";
+			data.appendChild(price);
+
+			wrapper.appendChild(data);
+
+			self.shownMeal = (self.shownMeal + 1) % self.canteenData.length;
+		}
+
+
+
+		return wrapper;
 	},
 
-	getDom: function() {
-		var self = this;
+	header: function() {
+		let self = this;
 
-		// create element wrapper for show into the module
-		var wrapper = document.createElement("div");
-		// If this.dataRequest is not empty
-		if (this.dataRequest) {
-			var wrapperDataRequest = document.createElement("div");
-			// check format https://jsonplaceholder.typicode.com/posts/1
-			wrapperDataRequest.innerHTML = this.dataRequest.title;
+		let urlApi = "https://openmensa.org/api/v2/canteens/" + self.config.canteen;
+		let dataRequest = new XMLHttpRequest();
+		dataRequest.open("GET", urlApi, true);
+		dataRequest.onreadystatechange = function() {
+			console.log(this.readyState);
+			if (this.readyState === 4) {
+				if (this.status === 200) {
+					self.canteenName = JSON.parse(this.response)["name"];
+				} else if (this.status === 401) {
+					Log.error(self.name, this.status);
+				} else {
+					Log.error(self.name, "Could not load canteen name.");
+				}
+			}
+		};
+		dataRequest.send();
 
-			var labelDataRequest = document.createElement("label");
-			// Use translate function
-			//             this id defined in translations files
-			labelDataRequest.innerHTML = this.translate("TITLE");
-
-
-			wrapper.appendChild(labelDataRequest);
-			wrapper.appendChild(wrapperDataRequest);
-		}
-
-		// Data from helper
-		if (this.dataNotification) {
-			var wrapperDataNotification = document.createElement("div");
-			// translations  + datanotification
-			wrapperDataNotification.innerHTML =  this.translate("UPDATE") + ": " + this.dataNotification.date;
-
-			wrapper.appendChild(wrapperDataNotification);
-		}
-		return wrapper;
+		let header = document.createElement("header");
+		header.innerHTML = self.canteenName;
+		return header;
 	},
 
 	getScripts: function() {
@@ -136,22 +145,31 @@ Module.register("MMM-OpenMensa", {
 	},
 
 	processData: function(data) {
-		var self = this;
-		this.dataRequest = data;
-		if (this.loaded === false) { self.updateDom(self.config.animationSpeed) ; }
-		this.loaded = true;
+		let self = this;
 
-		// the data if load
-		// send notification to helper
-		this.sendSocketNotification("MMM-OpenMensa-NOTIFICATION_TEST", data);
+		let canteenData = [];
+
+		data.forEach(function (meal) {
+			let ignore = false;
+			self.defaults.hideCategories.forEach(function (category) {
+				if (meal["category"] === category) {
+					ignore = true;
+				}
+			});
+			if (!ignore) {
+				canteenData.push(meal);
+			}
+		});
+
+		self.canteenData = canteenData;
 	},
 
 	// socketNotificationReceived from helper
-	socketNotificationReceived: function (notification, payload) {
+	/*socketNotificationReceived: function (notification, payload) {
 		if(notification === "MMM-OpenMensa-NOTIFICATION_TEST") {
 			// set dataNotification
 			this.dataNotification = payload;
 			this.updateDom();
 		}
-	},
+	},*/
 });
