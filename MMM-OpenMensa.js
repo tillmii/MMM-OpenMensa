@@ -159,13 +159,7 @@ Module.register("MMM-OpenMensa", {
 		let canteenData = [];
 
 		data.forEach(function (meal) {
-			let ignore = false;
-			self.defaults.hideCategories.forEach(function (category) {
-				if (meal["category"] === category) {
-					ignore = true;
-				}
-			});
-			if (!ignore) {
+			if(!self.config.hideCategories.includes(meal['category'])){
 				canteenData.push(meal);
 			}
 		});
