@@ -12,7 +12,8 @@ Module.register("MMM-OpenMensa", {
 		canteen: 79,
 		hideCategories: ["Pasta", "Terrine", "Tagessuppe"],
 		updateInterval: 5000,
-		fadeDuration: 2500
+		fadeDuration: 2500,
+		dataInterval: 3600000, // seconds
 	},
 
 	requiresVersion: "2.1.0", // Required version of MagicMirror
@@ -24,7 +25,7 @@ Module.register("MMM-OpenMensa", {
 
 		this.canteenName = null;
 		this.canteenData = null;
-		this.today = moment().date(); //Fetch new data on a new day
+		this.last_update = Date.now() //Fetch new data every dataInterval milliseconds
 		this.shownMeal = 0; //Meal which is currently displayed
 
 		//Flag for check if module is loaded
@@ -66,9 +67,9 @@ Module.register("MMM-OpenMensa", {
 	getDom: function() {
 		let self = this;
 
-		if (self.today !== moment().date()) {
+		if (self.last_update + self.config.dataInterval < Date.now()) {
 			self.getData();
-			self.today = moment().date();
+			self.last_update = Date.now()
 		}
 
 		let wrapper = document.createElement("div");
