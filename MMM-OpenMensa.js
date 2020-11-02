@@ -35,7 +35,7 @@ Module.register("MMM-OpenMensa", {
 		// Schedule update timer
 		this.getData();
 		setInterval(function() {
-			self.updateDom(self.defaults.fadeDuration);
+			self.updateDom(self.config.fadeDuration);
 		}, this.config.updateInterval);
 	},
 
