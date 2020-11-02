@@ -12,7 +12,7 @@ Module.register("MMM-OpenMensa", {
 		canteen: 79,
 		hideCategories: ["Pasta", "Terrine", "Tagessuppe"],
 		updateInterval: 5000,
-		fadeDuration: 2500,
+		fadeDuration: 1000,
 		dataInterval: 3600000, // seconds
 	},
 
