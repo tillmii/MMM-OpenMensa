@@ -2,7 +2,7 @@
 
 This is a module for the [MagicMirror²](https://github.com/MichMich/MagicMirror/).
 
-Todo: Insert description here!
+It displays all today's meals from any german canteen. Therefor it uses the [OpenMensa API](https://openmensa.org/).
 
 ## Using the module
 
@@ -13,7 +13,10 @@ var config = {
         {
             module: 'MMM-OpenMensa',
             config: {
-                // See below for configurable options
+                canteen: 79,
+                hideCategories: ["Pasta", "Terrine", "Tagessuppe"],
+                updateInterval: 5000,
+                fadeDuration: 1500
             }
         }
     ]
@@ -24,5 +27,7 @@ var config = {
 
 | Option           | Description
 |----------------- |-----------
-| `option1`        | *Required* DESCRIPTION HERE
-| `option2`        | *Optional* DESCRIPTION HERE TOO <br><br>**Type:** `int`(milliseconds) <br>Default 60000 milliseconds (1 minute)
+| `canteen`        | *Required* <br> Choose any canteen in Germany from this map: https://openmensa.org <br> **Type:** `int`<br> **Default:** `79`
+| `hideCategories` | *Optional* <br> Hide the categories you're not interested in <br> **Type:** `String[]` <br> **Default:** `[]`
+| `updateInterval` | *Optional* <br> Interval in which the data is fetched from the API in milliseconds (5 seconds should be totally fine) <br> **Type:** `int` <br> **Default:** `5000`
+| `fadeDuration`   | *Optional* <br> Duration in which the current meal is displayed <br> **Type:** `int` <br> **Default:** `2500`
