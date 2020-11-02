@@ -3,7 +3,7 @@
 /* Magic Mirror
  * Module: MMM-OpenMensa
  *
- * By 
+ * By Till Michels (tillmii)
  * MIT Licensed.
  */
 
@@ -12,23 +12,25 @@ Module.register("MMM-OpenMensa", {
 		canteen: 79,
 		hideCategories: ["Pasta", "Terrine", "Tagessuppe"],
 		updateInterval: 5000,
-		fadeDuration: 1500
+		fadeDuration: 2500
 	},
 
 	requiresVersion: "2.1.0", // Required version of MagicMirror
 
 	start: function() {
+		Log.info("Starting module: " + this.name);
+
 		let self = this;
 
 		this.canteenName = null;
 		this.canteenData = null;
-		//Fetch new data on a new day
-		this.today = moment().date();
-		//Meal which is currently displayed
-		this.shownMeal = 0;
+		this.today = moment().date(); //Fetch new data on a new day
+		this.shownMeal = 0; //Meal which is currently displayed
 
 		//Flag for check if module is loaded
 		this.loaded = false;
+
+		this.getCanteenName();
 
 		// Schedule update timer
 		this.getData();
@@ -70,6 +72,7 @@ Module.register("MMM-OpenMensa", {
 		}
 
 		let wrapper = document.createElement("div");
+		//wrapper.setAttribute("width", "300px")
 		wrapper.appendChild(self.header());
 
 		if (self.canteenData) {
@@ -93,6 +96,10 @@ Module.register("MMM-OpenMensa", {
 			wrapper.appendChild(data);
 
 			self.shownMeal = (self.shownMeal + 1) % self.canteenData.length;
+		} else {
+			let error = document.createElement("div");
+			error.innerHTML = "There was an error fetching the data"
+			wrapper.appendChild(error);
 		}
 
 
@@ -101,6 +108,12 @@ Module.register("MMM-OpenMensa", {
 	},
 
 	header: function() {
+		let header = document.createElement("header");
+		header.innerHTML = self.canteenName;
+		return header;
+	},
+
+	getCanteenName: function() {
 		let self = this;
 
 		let urlApi = "https://openmensa.org/api/v2/canteens/" + self.config.canteen;
@@ -119,10 +132,6 @@ Module.register("MMM-OpenMensa", {
 			}
 		};
 		dataRequest.send();
-
-		let header = document.createElement("header");
-		header.innerHTML = self.canteenName;
-		return header;
 	},
 
 	getScripts: function() {
