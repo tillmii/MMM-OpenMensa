@@ -43,7 +43,9 @@ Module.register("MMM-OpenMensa", {
 	getData: function() {
 		let self = this;
 
-		let urlApi = "https://openmensa.org/api/v2/canteens/" + self.config.canteen + "/days/" + moment().format("YYYY-MM-DD") + "/meals";
+		let lookup_time = moment().add(5, 'hours').format('YYYY-MM-DD')
+
+		let urlApi = "https://openmensa.org/api/v2/canteens/" + self.config.canteen + "/days/" + lookup_time + "/meals";
 
 		let dataRequest = new XMLHttpRequest();
 		dataRequest.open("GET", urlApi, true);
