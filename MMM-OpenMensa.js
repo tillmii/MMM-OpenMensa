@@ -83,7 +83,6 @@ Module.register("MMM-OpenMensa", {
 			category.className = "category";
 			category.innerHTML = self.canteenData[self.shownMeal]["category"];
 			data.appendChild(category);
-
 			let name = document.createElement("div");
 			name.className = "name";
 			name.innerHTML = self.canteenData[self.shownMeal]["name"];
@@ -109,6 +108,8 @@ Module.register("MMM-OpenMensa", {
 	},
 
 	header: function() {
+		let self = this
+
 		let header = document.createElement("header");
 		header.innerHTML = self.canteenName;
 		return header;
