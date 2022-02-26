@@ -31,19 +31,23 @@ Module.register("MMM-OpenMensa", {
 		//Flag for check if module is loaded
 		this.loaded = false;
 
+		this.update = false;
+
 		this.getCanteenName();
 
 		// Schedule update timer
 		this.getData();
 		setInterval(function() {
-			self.updateDom(self.config.fadeDuration);
+			self.refresh();
 		}, this.config.updateInterval);
 	},
 
 	getData: function() {
 		let self = this;
 
-		let lookup_time = moment().add(5, 'hours').format('YYYY-MM-DD')
+		let lookup_time = moment().add(5, 'hours').format('YYYY-MM-DD');
+		
+		self.getOpening(lookup_time);
 
 		let urlApi = "https://openmensa.org/api/v2/canteens/" + self.config.canteen + "/days/" + lookup_time + "/meals";
 
@@ -56,7 +60,7 @@ Module.register("MMM-OpenMensa", {
 				if (this.status === 200) {
 					self.processData(JSON.parse(this.response));
 				} else if (this.status === 401) {
-					self.updateDom(self.config.animationSpeed);
+					//self.updateDom(self.config.animationSpeed);
 					Log.error(self.name, this.status);
 				} else {
 					Log.error(self.name, "Could not load data.");
@@ -66,19 +70,59 @@ Module.register("MMM-OpenMensa", {
 		dataRequest.send();
 	},
 
-	getDom: function() {
+	getOpening: function(date) {
+		let self = this;
+
+		let urlApi = "https://openmensa.org/api/v2/canteens/" + self.config.canteen + "/days/" + date;
+		
+		let dataRequest = new XMLHttpRequest();
+		dataRequest.open("GET", urlApi, true);
+		dataRequest.onreadystatechange = function() {
+			console.log(this.readyState);
+			if (this.readyState === 4) {
+				console.log(this.status);
+				if (this.status === 200) {
+					self.closed = JSON.parse(this.response).closed
+					self.update = true;
+					Log.info(self.name, self.canteenName,"Mensa closed: " + self.closed)
+				} else if (this.status === 401) {
+					//self.updateDom(self.config.animationSpeed);
+					Log.error(self.name, this.status);
+				} else {
+					Log.error(self.name, "Could not load data.");
+				}
+			}
+		};
+		dataRequest.send();
+	},
+
+	refresh: function() {
 		let self = this;
 
 		if (self.last_update + self.config.dataInterval < Date.now()) {
 			self.getData();
 			self.last_update = Date.now()
+			self.updateDom(self.config.fadeDuration)
 		}
+		else if(self.canteenData.length>1 && !self.closed) {
+			self.updateDom(self.config.fadeDuration)
+		}
+		else if (self.update) {
+			self.update = false;
+			self.updateDom(self.config.fadeDuration)
+		}
+	},
+
+	getDom: function() {
+		let self = this;
+
+		
 
 		let wrapper = document.createElement("div");
 		//wrapper.setAttribute("width", "300px")
 		wrapper.appendChild(self.header());
 
-		if (self.canteenData) {
+		if (!self.closed && self.canteenData) {
 			let data = document.createElement("div");
 
 			let category = document.createElement("div");
@@ -98,7 +142,13 @@ Module.register("MMM-OpenMensa", {
 			wrapper.appendChild(data);
 
 			self.shownMeal = (self.shownMeal + 1) % self.canteenData.length;
-		} else {
+		} 
+		else if (self.closed) {
+			let error = document.createElement("div");
+			error.innerHTML = "Mensa closed."
+			wrapper.appendChild(error);
+		}
+		else {
 			let error = document.createElement("div");
 			error.innerHTML = "There was an error fetching the data"
 			wrapper.appendChild(error);
@@ -169,6 +219,7 @@ Module.register("MMM-OpenMensa", {
 		});
 
 		self.canteenData = canteenData;
+		self.update = true;
 	},
 
 	// socketNotificationReceived from helper
