@@ -51,6 +51,8 @@ Module.register("MMM-OpenMensa", {
 
 		let urlApi = "https://openmensa.org/api/v2/canteens/" + self.config.canteen + "/days/" + lookup_time + "/meals";
 
+		self.weekday = self.getDayName(lookup_time, "en-US");
+
 		let dataRequest = new XMLHttpRequest();
 		dataRequest.open("GET", urlApi, true);
 		dataRequest.onreadystatechange = function() {
@@ -84,7 +86,7 @@ Module.register("MMM-OpenMensa", {
 				if (this.status === 200) {
 					self.closed = JSON.parse(this.response).closed
 					self.update = true;
-					Log.info(self.name, self.canteenName,"Mensa closed: " + self.closed)
+					Log.info(self.name, self.canteenName,"Canteen closed: " + self.closed)
 				} else if (this.status === 401) {
 					//self.updateDom(self.config.animationSpeed);
 					Log.error(self.name, this.status);
@@ -124,7 +126,10 @@ Module.register("MMM-OpenMensa", {
 
 		if (!self.closed && self.canteenData) {
 			let data = document.createElement("div");
-
+			let header = document.createElement("div");
+			header.innerHTML = self.weekday;
+			header.className = "weekday";
+			data.appendChild(header);
 			let category = document.createElement("div");
 			category.className = "category";
 			category.innerHTML = self.canteenData[self.shownMeal]["category"];
@@ -221,6 +226,25 @@ Module.register("MMM-OpenMensa", {
 		self.canteenData = canteenData;
 		self.update = true;
 	},
+
+	getDayName: function(dateStr, locale)
+	{
+		let self = this;
+		var date = new Date(dateStr);
+		
+		if (self.getDaysBetween(new Date(),date)==0) {
+			return "Today";
+		} else if (self.getDaysBetween(new Date(),date)==1) {
+			return "Tomorrow";
+		} else {
+			return date.toLocaleDateString(locale, { weekday: 'long' });
+		}
+	},
+	getDaysBetween: (dateA, dateB) => {
+		let a = new Date(dateA).getTime(), b = new Date(dateB).getTime();
+
+		return Math.floor((a-b)/(1000*60*60*24))
+	}
 
 	// socketNotificationReceived from helper
 	/*socketNotificationReceived: function (notification, payload) {
